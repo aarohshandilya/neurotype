@@ -1,0 +1,132 @@
+<!doctype html>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --ink:#0A1B3F; --muted:#4A5F85; --cobalt:#1450E6; --electric:#2E8BFF; --ice:#EAF4FF; --line:#CFE1FA; --amber:#8A5A00; }
+* { box-sizing:border-box; }
+html, body { margin:0; background:transparent; color:var(--ink); font:15px/1.4 "Instrument Sans",system-ui,sans-serif; }
+.panel { background:radial-gradient(90% 75% at 50% 26%, #DCEBFF 0%, #F6FAFF 48%, #fff 100%); border:1px solid var(--line); border-radius:22px; padding:16px 20px 16px; }
+.meta { display:flex; justify-content:space-between; gap:12px; color:var(--muted); font-size:13.5px; font-variant-numeric:tabular-nums; }
+.meta b { color:var(--ink); font-weight:600; }
+.stage { display:grid; grid-template-columns:minmax(92px,190px) 1fr minmax(92px,190px); gap:14px; align-items:stretch; margin:12px 0 10px; }
+.cmd { border:1.5px solid var(--line); border-radius:16px; background:#fff; padding:14px 10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font:600 16px/1.2 Sora,sans-serif; color:var(--muted); transition:background .25s,color .25s,border-color .25s,box-shadow .25s; min-height:112px; text-align:center; }
+.cmd svg { width:30px; height:30px; }
+.cmd.on { background:var(--cobalt); border-color:var(--cobalt); color:#fff; box-shadow:0 0 0 5px rgba(46,139,255,.18), 0 10px 30px rgba(20,80,230,.32); }
+.cmd.lean { border-style:dashed; border-color:var(--electric); color:var(--cobalt); }
+.track { position:relative; min-height:112px; }
+.rail { position:absolute; left:0; right:0; top:50%; height:2px; background:linear-gradient(90deg,transparent,var(--electric) 12%,var(--electric) 88%,transparent); opacity:.55; }
+.tick { position:absolute; top:calc(50% - 5px); width:1px; height:12px; background:var(--electric); opacity:.45; }
+.orb { position:absolute; z-index:2; top:50%; width:74px; height:74px; margin:-37px 0 0 -37px; border-radius:50%; background:radial-gradient(circle at 50% 50%, #fff 0 17%, #BFE0FF 30%, var(--electric) 56%, var(--cobalt) 72%, rgba(20,80,230,0) 73%); box-shadow:0 0 30px 9px rgba(46,139,255,.42), 0 0 0 11px rgba(46,139,255,.09); transition:left .55s cubic-bezier(.2,.8,.2,1); }
+.reading .orb { animation:pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow:0 0 42px 14px rgba(46,139,255,.56), 0 0 0 17px rgba(46,139,255,.07); } }
+canvas { display:block; width:100%; height:128px; }
+.readout { display:grid; grid-template-columns:1fr 1.5fr 1.5fr 1.2fr; gap:18px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+.readout label { display:block; color:var(--muted); font-size:13px; margin-bottom:2px; }
+.readout strong { font:600 19px/1.25 Sora,sans-serif; display:block; }
+.meter { position:relative; height:9px; border-radius:5px; background:var(--ice); margin-top:9px; }
+.fill { height:100%; border-radius:5px; background:linear-gradient(90deg,var(--electric),var(--cobalt)); width:0; transition:width .35s; }
+.fill.low { background:#9DB4D6; }
+.limit { position:absolute; top:-5px; width:2px; height:19px; background:var(--ink); }
+.small { color:var(--muted); font-size:13px; margin-top:3px; }
+.held { color:var(--amber); }
+.truth { border-left:3px solid var(--ink); padding-left:12px; }
+@media (max-width:640px) {
+  .panel { padding:12px; } .stage { grid-template-columns:84px 1fr 84px; gap:8px; }
+  .cmd { font-size:14px; padding:8px 4px; } .orb { width:54px; height:54px; margin:-27px 0 0 -27px; }
+  .readout { grid-template-columns:1fr 1fr; gap:12px; } .readout strong { font-size:16px; }
+  canvas { height:96px; } .meta span:last-child { display:none; }
+}
+@media (prefers-reduced-motion: reduce) { .orb, .cmd, .fill { transition:none; } .reading .orb { animation:none; } }
+</style>
+<div class="panel" id="panel">
+  <div class="meta"><span id="trial"></span><span id="status" aria-live="polite"></span><span id="where"></span></div>
+  <div class="stage">
+    <div class="cmd" id="cmd-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Move left</div>
+    <div class="track" id="track" role="img" aria-label="On-screen cursor"><div class="rail"></div><div class="orb" id="orb"></div></div>
+    <div class="cmd" id="cmd-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Move right</div>
+  </div>
+  <canvas id="sig" aria-label="Signal replay for three central channels"></canvas>
+  <div class="readout">
+    <div><label>Predicted intention</label><strong id="pred">Waiting</strong></div>
+    <div><label>Confidence</label><strong id="conf">Not available</strong><div class="meter"><div class="fill" id="fill"></div><div class="limit" id="limit" title="Confidence threshold"></div></div></div>
+    <div><label>Command</label><strong id="command">None</strong><div class="small" id="commandNote"></div></div>
+    <div class="truth"><label>True label</label><strong id="truth">Hidden</strong><div class="small" id="truthNote">Comes from the dataset, never drives the command</div></div>
+  </div>
+</div>
+<script>
+const P = /*PAYLOAD*/;
+const $ = id => document.getElementById(id);
+const span = 5, posToPct = v => 50 + 44 * Math.max(-span, Math.min(span, v)) / span;
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+for (let i = -span; i <= span; i++) { const t = document.createElement('div'); t.className = 'tick'; t.style.left = posToPct(i) + '%'; $('track').appendChild(t); }
+$('trial').innerHTML = `<b>Trial ${P.trial} of ${P.total}</b>`;
+$('where').textContent = P.where;
+$('orb').style.left = posToPct(P.cursorBefore) + '%';
+$('limit').style.left = (P.threshold - .5) * 200 + '%';
+
+const canvas = $('sig'), ctx = canvas.getContext('2d');
+function draw(progress) {
+  const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const lane = H / P.signals.length, left = 34;
+  ctx.font = '600 12px "Instrument Sans", sans-serif'; ctx.textBaseline = 'middle';
+  P.signals.forEach((s, c) => {
+    const y0 = lane * (c + .5);
+    ctx.fillStyle = '#4A5F85'; ctx.fillText(P.channels[c], 0, y0);
+    ctx.strokeStyle = '#E2EDFB'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(left, y0); ctx.lineTo(W, y0); ctx.stroke();
+    const end = Math.floor(progress * (s.length - 1));
+    ctx.strokeStyle = '#1450E6'; ctx.lineWidth = 1.3; ctx.lineJoin = 'round'; ctx.beginPath();
+    for (let i = 0; i <= end; i++) { const x = left + (W - left) * i / (s.length - 1), y = y0 - s[i] * lane * .46; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+  });
+  if (progress > 0 && progress < 1) {
+    const x = left + (W - left) * progress, g = ctx.createLinearGradient(x - 26, 0, x, 0);
+    g.addColorStop(0, 'rgba(46,139,255,0)'); g.addColorStop(1, 'rgba(46,139,255,.35)');
+    ctx.fillStyle = g; ctx.fillRect(x - 26, 0, 26, H); ctx.fillStyle = '#2E8BFF'; ctx.fillRect(x - 1, 0, 2, H);
+  }
+}
+
+function reveal() {
+  $('panel').classList.remove('reading');
+  const d = P.decision;
+  if (!d) { $('status').textContent = P.idle; return; }
+  const pct = Math.round(d.confidence * 100), side = d.side.toLowerCase();
+  $('pred').textContent = d.side;
+  $('conf').textContent = pct + '%';
+  $('fill').style.width = (d.confidence - .5) * 200 + '%';
+  $('truth').textContent = P.truth;
+  if (d.accepted) {
+    $('status').textContent = 'Command accepted';
+    $('cmd-' + side).classList.add('on');
+    $('command').textContent = 'Move ' + side;
+    $('commandNote').textContent = `${pct}% meets the ${Math.round(P.threshold * 100)}% threshold`;
+    $('orb').style.left = posToPct(P.cursorAfter) + '%';
+    $('truthNote').textContent = d.side === P.truth ? '✓ Prediction matches' : '✕ Prediction does not match';
+  } else {
+    $('status').textContent = 'Abstained';
+    $('cmd-' + side).classList.add('lean');
+    $('fill').classList.add('low');
+    $('command').textContent = 'Hold';
+    $('command').classList.add('held');
+    $('commandNote').textContent = `${pct}% is below the ${Math.round(P.threshold * 100)}% threshold`;
+    $('truthNote').textContent = 'No command was sent for this trial';
+  }
+}
+
+if (P.mode === 'animate' && !still) {
+  $('panel').classList.add('reading');
+  $('status').textContent = 'Reading the recorded window';
+  $('pred').textContent = 'Reading';
+  const start = performance.now();
+  (function frame(now) {
+    const p = Math.min(1, (now - start) / P.durationMs);
+    draw(p);
+    p < 1 ? requestAnimationFrame(frame) : reveal();
+  })(start);
+} else if (P.mode === 'ready') {
+  draw(0); $('status').textContent = 'Ready to replay';
+} else {
+  draw(1); reveal();
+}
+window.addEventListener('resize', () => draw(1));
+</script>

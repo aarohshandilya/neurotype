@@ -1,0 +1,559 @@
+<title>NeuroType</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single instrument console opens the page; analysis, evaluation and method read below it as one continuous sheet of ice-white paper. */
+:root {
+  color-scheme: light;
+  --paper:#FFFFFF; --ice:#EEF6FF; --frost:#DCEBFF; --line:#CFE1FA; --ink:#0A1B3F; --muted:#4A5F85;
+  --cobalt:#1450E6; --electric:#2E8BFF; --teal:#0792A8; --deep:#0D2F9E; --amber:#7A4F00; --amber-soft:#FFF4DA; --wrong:#B3261E;
+  --display:"Sora","Segoe UI",system-ui,sans-serif; --body:"Instrument Sans",system-ui,-apple-system,sans-serif;
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; background:var(--ice); color:var(--ink); font:16px/1.5 var(--body); -webkit-font-smoothing:antialiased; }
+body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--paper); }
+button, input { font:inherit; color:inherit; }
+button { cursor:pointer; }
+:focus-visible { outline:3px solid var(--electric); outline-offset:2px; border-radius:6px; }
+a { color:var(--cobalt); }
+.wrap { max-width:1180px; margin:0 auto; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); }
+h1,h2,h3 { font-family:var(--display); margin:0; text-wrap:balance; }
+h2 { font-size:clamp(25px,3.4vw,34px); font-weight:700; letter-spacing:-.025em; line-height:1.15; }
+h3 { font-size:16px; font-weight:600; letter-spacing:-.005em; }
+p { margin:0; }
+.num { font-variant-numeric:tabular-nums; }
+
+.top { position:sticky; top:env(safe-area-inset-top,0px); z-index:9; background:rgba(255,255,255,.9); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+.top .wrap { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:60px; padding-block:9px; flex-wrap:wrap; }
+.mark { font:800 20px/1 var(--display); letter-spacing:-.04em; color:var(--ink); text-decoration:none; }
+.top nav { display:flex; gap:20px; font-size:14.5px; margin-left:auto; }
+.top nav a { color:var(--muted); text-decoration:none; font-weight:500; }
+.top nav a:hover { color:var(--cobalt); }
+.badge { font:600 12px/1 var(--display); padding:9px 13px; border-radius:999px; white-space:nowrap; background:var(--paper); }
+.badge.sim { color:var(--amber); border:1.5px solid #B98500; }
+.badge.real { color:var(--deep); border:1.5px solid var(--cobalt); box-shadow:0 0 0 3px rgba(46,139,255,.16); }
+
+.hero { background:radial-gradient(70% 90% at 62% 0%, var(--frost) 0%, rgba(220,235,255,0) 72%), var(--ice); padding-block:30px 44px; }
+.intro { display:grid; grid-template-columns:auto minmax(0,1fr); gap:10px 44px; align-items:end; margin-bottom:22px; }
+.word { font:800 clamp(52px,9.4vw,108px)/.92 var(--display); letter-spacing:-.06em; background:linear-gradient(100deg,var(--ink) 6%,var(--cobalt) 62%,var(--electric)); -webkit-background-clip:text; background-clip:text; color:transparent; padding-bottom:.08em; }
+.intro p { max-width:54ch; color:var(--muted); }
+.intro .sub { color:var(--ink); font-size:18px; font-weight:500; }
+.by { font-size:14px; }
+
+.console { background:var(--paper); border:1px solid var(--line); border-radius:26px; box-shadow:0 26px 70px -38px rgba(20,80,230,.5); overflow:hidden; }
+.bar { display:flex; flex-wrap:wrap; gap:12px 22px; align-items:flex-end; padding:14px 22px; border-bottom:1px solid var(--line); }
+.field { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.field > span, .field > label { font-size:13px; color:var(--muted); }
+.seg { display:inline-flex; background:var(--ice); border-radius:10px; padding:3px; gap:2px; flex-wrap:wrap; }
+.seg button { border:0; background:transparent; padding:6px 12px; border-radius:8px; font-size:14px; font-weight:500; color:var(--muted); transition:background .15s,color .15s; }
+.seg button:hover { color:var(--cobalt); }
+.seg button[aria-pressed="true"] { background:var(--paper); color:var(--cobalt); box-shadow:0 1px 3px rgba(13,47,158,.2); font-weight:600; }
+
+.stage { position:relative; display:grid; grid-template-columns:minmax(96px,200px) minmax(0,1fr) minmax(96px,200px); gap:16px; padding:20px 22px 10px; background:radial-gradient(44% 90% at 50% 40%, var(--frost), rgba(220,235,255,0) 100%); }
+.cmd { position:relative; border:1.5px solid var(--line); border-radius:18px; background:var(--paper); min-height:128px; display:flex; flex-direction:column; gap:5px; align-items:center; justify-content:center; font:600 16px/1.2 var(--display); color:var(--muted); padding:10px; transition:background .22s,color .22s,border-color .22s,box-shadow .22s,transform .12s; }
+.cmd svg { width:30px; height:30px; }
+.cmd small { font:500 12.5px/1.2 var(--body); color:inherit; opacity:.9; min-height:15px; }
+.cmd.open:hover { border-color:var(--electric); color:var(--cobalt); transform:translateY(-2px); }
+.cmd.guess { border-color:var(--ink); color:var(--ink); box-shadow:0 0 0 3px var(--frost); }
+.cmd.on { background:var(--cobalt); border-color:var(--cobalt); color:#fff; box-shadow:0 0 0 6px rgba(46,139,255,.18),0 12px 34px rgba(20,80,230,.34); }
+.cmd.lean { border-style:dashed; border-color:var(--electric); color:var(--cobalt); }
+.track { position:relative; min-height:128px; }
+.rail { position:absolute; left:0; right:0; top:50%; height:2px; background:linear-gradient(90deg,transparent,var(--electric) 10%,var(--electric) 90%,transparent); opacity:.55; }
+.tick { position:absolute; top:calc(50% - 6px); width:1px; height:14px; background:var(--electric); opacity:.45; }
+.orb { position:absolute; z-index:2; top:50%; width:84px; height:84px; margin:-42px 0 0 -42px; border-radius:50%; background:radial-gradient(circle,#fff 0 17%,#BFE0FF 30%,var(--electric) 56%,var(--cobalt) 72%,rgba(20,80,230,0) 73%); box-shadow:0 0 34px 10px rgba(46,139,255,.42),0 0 0 12px rgba(46,139,255,.09); transition:left .6s cubic-bezier(.2,.8,.2,1); }
+.reading .orb { animation:pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow:0 0 48px 16px rgba(46,139,255,.58),0 0 0 19px rgba(46,139,255,.07); } }
+.ring { position:absolute; inset:0; border-radius:50%; border:2px solid var(--electric); animation:ring .8s ease-out forwards; pointer-events:none; }
+@keyframes ring { from { transform:scale(.7); opacity:.9; } to { transform:scale(2.6); opacity:0; } }
+
+.sig { padding:0 22px; }
+canvas { display:block; width:100%; }
+#wave { height:132px; }
+.chips { display:flex; flex-wrap:wrap; gap:5px; padding:10px 22px 12px; align-items:center; }
+.chip { width:26px; height:26px; border-radius:7px; border:1px solid var(--line); background:var(--paper); color:var(--muted); font-size:12px; font-weight:600; line-height:1; padding:0; display:grid; place-items:center; }
+.chip.now { outline:2px solid var(--ink); outline-offset:1px; }
+.chip.ok { background:var(--frost); color:var(--deep); border-color:var(--frost); }
+.chip.miss { background:var(--paper); color:var(--wrong); border-color:var(--wrong); }
+.chip.hold { background:var(--amber-soft); color:var(--amber); border-color:var(--amber-soft); }
+.chip:disabled { cursor:default; opacity:.55; }
+.legend { color:var(--muted); font-size:12.5px; margin-left:auto; }
+
+.readout { display:grid; grid-template-columns:1fr 1.45fr 1.45fr 1.35fr; gap:20px; padding:14px 22px 16px; border-top:1px solid var(--line); }
+.readout label, .lab { display:block; color:var(--muted); font-size:13px; margin-bottom:2px; }
+.readout strong { font:600 21px/1.2 var(--display); display:block; letter-spacing:-.01em; }
+.meter { position:relative; height:9px; border-radius:5px; background:var(--ice); margin-top:8px; }
+.fill { height:100%; border-radius:5px; background:linear-gradient(90deg,var(--electric),var(--cobalt)); width:0; transition:width .35s; }
+.fill.low { background:#9DB4D6; }
+.limit { position:absolute; top:-5px; width:2px; height:19px; background:var(--ink); transition:left .1s; }
+.small { color:var(--muted); font-size:13px; margin-top:3px; }
+.held { color:var(--amber); }
+.truth { border-left:3px solid var(--ink); padding-left:12px; }
+
+.deck { display:grid; grid-template-columns:auto minmax(170px,1fr) minmax(170px,1fr) auto; gap:14px 26px; align-items:center; padding:14px 22px; background:var(--ice); border-top:1px solid var(--line); }
+.transport { display:flex; gap:7px; flex-wrap:wrap; }
+.btn { border:1px solid var(--line); background:var(--paper); border-radius:11px; padding:9px 14px; font-weight:600; font-size:14.5px; transition:border-color .15s,color .15s,transform .1s; }
+.btn:hover:not(:disabled) { border-color:var(--cobalt); color:var(--cobalt); }
+.btn:active:not(:disabled) { transform:translateY(1px); }
+.btn:disabled { opacity:.45; cursor:default; }
+.btn.go { background:var(--cobalt); color:#fff; border-color:var(--cobalt); min-width:92px; }
+.btn.go:hover:not(:disabled) { background:var(--deep); color:#fff; border-color:var(--deep); }
+.slider label { display:flex; justify-content:space-between; gap:10px; font-size:13px; color:var(--muted); margin-bottom:5px; }
+.slider b { color:var(--ink); font-weight:600; }
+input[type=range] { width:100%; accent-color:var(--cobalt); margin:0; height:22px; }
+.live { text-align:right; min-width:128px; }
+.live b { display:block; font:700 30px/1 var(--display); letter-spacing:-.03em; color:var(--cobalt); }
+.live span { font-size:12.5px; color:var(--muted); display:block; margin-top:3px; }
+.versus { display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:space-between; padding:9px 22px; font-size:14px; color:var(--muted); border-top:1px solid var(--line); }
+.versus b { color:var(--ink); }
+
+.sheet { background:var(--paper); }
+.section { padding-block:54px; border-top:1px solid var(--line); }
+.section:first-child { border-top:0; }
+.head { display:flex; flex-wrap:wrap; gap:8px 26px; justify-content:space-between; align-items:baseline; margin-bottom:22px; }
+.head p { color:var(--muted); max-width:62ch; }
+.grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:30px 40px; }
+.fig { min-width:0; }
+.fig h3 { margin-bottom:8px; }
+.fig .note { color:var(--muted); font-size:13.5px; margin-top:8px; max-width:62ch; }
+.wide { grid-column:1 / -1; }
+.prob { display:grid; gap:12px; margin-top:12px; }
+.prow { display:grid; grid-template-columns:96px minmax(0,1fr); gap:10px; align-items:center; font-size:15px; }
+.pbar { position:relative; height:30px; background:var(--ice); border-radius:6px; }
+.pfill { position:absolute; inset:0 auto 0 0; border-radius:6px; transition:width .35s; }
+.plimit { position:absolute; top:-6px; bottom:-6px; width:0; border-left:2px dotted var(--ink); }
+#heat { height:240px; }
+svg text { font-family:var(--body); fill:var(--muted); font-size:12px; }
+svg .ink { fill:var(--ink); font-weight:600; }
+
+.tablewrap { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-size:14.5px; font-variant-numeric:tabular-nums; }
+th { text-align:right; font-weight:500; color:var(--muted); font-size:13px; padding:7px 12px; border-bottom:1px solid var(--line); white-space:nowrap; }
+td { text-align:right; padding:9px 12px; border-bottom:1px solid var(--ice); white-space:nowrap; }
+th:first-child, td:first-child { text-align:left; padding-left:0; }
+tr.sel td { background:var(--ice); }
+tr.sel td:first-child { font-weight:600; padding-left:8px; }
+td.trainc, th.trainc { color:var(--muted); }
+.warn { background:var(--amber-soft); color:var(--amber); padding:10px 14px; border-radius:10px; font-size:14.5px; margin-bottom:18px; }
+.cm { display:grid; grid-template-columns:auto repeat(2,minmax(64px,1fr)); gap:3px; font-size:13px; color:var(--muted); align-items:center; max-width:340px; }
+.cm div { text-align:center; }
+.cm .cell { font:600 22px/1 var(--display); padding:22px 0; border-radius:6px; }
+.cm .y { text-align:right; padding-right:8px; }
+.steps { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px; padding:0; margin:0; list-style:none; counter-reset:s; }
+.steps li { counter-increment:s; min-width:0; font-size:14.5px; color:var(--muted); }
+.steps b { display:block; font:600 15.5px/1.25 var(--display); color:var(--ink); margin-bottom:5px; }
+.steps li::before { content:counter(s); display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--frost); color:var(--deep); font:600 13.5px var(--display); margin-bottom:9px; }
+
+.drop { border:2px dashed var(--electric); border-radius:18px; padding:26px; text-align:center; background:var(--ice); transition:background .15s; }
+.drop.over { background:var(--frost); }
+.drop p { margin-bottom:12px; }
+.status { margin-top:10px; font-size:14px; min-height:21px; }
+.status.bad { color:var(--wrong); }
+pre { background:var(--ink); color:#DCEBFF; border-radius:12px; padding:14px 16px; overflow-x:auto; font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; margin:8px 0 0; }
+.prose p { max-width:64ch; margin-bottom:13px; color:#26395F; }
+.prose h3 { margin-bottom:6px; }
+.cite { font-size:14px; }
+footer { background:var(--paper); border-top:1px solid var(--line); padding-block:22px; color:var(--muted); font-size:14px; }
+
+@media (max-width:900px) {
+  .deck { grid-template-columns:1fr 1fr; } .transport { grid-column:1 / -1; } .live { grid-column:1 / -1; text-align:left; display:flex; gap:10px; align-items:baseline; }
+  .steps { grid-template-columns:repeat(2,minmax(0,1fr)); } .grid2 { grid-template-columns:minmax(0,1fr); }
+  .intro { grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width:640px) {
+  .top nav { display:none; } .badge { font-size:10.5px; padding:8px 10px; }
+  .bar,.stage,.sig,.chips,.readout,.deck,.versus { padding-left:14px; padding-right:14px; }
+  .stage { grid-template-columns:82px minmax(0,1fr) 82px; gap:8px; } .cmd { font-size:13.5px; min-height:112px; } .track { min-height:112px; }
+  .orb { width:56px; height:56px; margin:-28px 0 0 -28px; } .readout { grid-template-columns:1fr 1fr; gap:14px; } .readout strong { font-size:18px; }
+  #wave { height:104px; } .deck { grid-template-columns:minmax(0,1fr); } .legend { display:none; }
+  .console { border-radius:18px; } .section { padding-block:40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior:auto; } .orb,.cmd,.fill,.pfill { transition:none; } .reading .orb { animation:none; } .ring { display:none; }
+}
+</style>
+
+<header class="top"><div class="wrap">
+  <a class="mark" href="#console">NeuroType</a>
+  <nav aria-label="Sections"><a href="#analysis">Analysis</a><a href="#evaluation">Evaluation</a><a href="#method">Method</a><a href="#real-data">Real data</a></nav>
+  <span class="badge sim" id="badge">SYNTHETIC SIGNAL — NOT EEG, NOT LIVE</span>
+</div></header>
+
+<main>
+<section class="hero" id="console"><div class="wrap">
+  <div class="intro">
+    <h1 class="word">NeuroType</h1>
+    <div>
+      <p class="sub">EEG motor-imagery research demo</p>
+      <p id="introText">Signals are simulated here and a classifier trains in your browser. It turns each trial into a left or right command, or holds when unsure. Press Start, then call left or right before the model does.</p>
+      <p class="by">Aaroh Shandilya · 2026</p>
+    </div>
+  </div>
+
+  <div class="console" id="panel">
+    <div class="bar">
+      <div class="field"><span id="pLabel">Simulated participant</span><div class="seg" id="segSubject"></div></div>
+      <div class="field"><span>Run</span><div class="seg" id="segRun"></div></div>
+      <div class="field"><span>Model</span><div class="seg" id="segModel"></div></div>
+      <div class="field"><span>Speed</span><div class="seg" id="segSpeed"></div></div>
+    </div>
+
+    <div class="stage">
+      <button class="cmd" id="cmd-left" aria-label="Left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Move left<small id="hint-left"></small></button>
+      <div class="track" id="track" role="img" aria-label="On-screen cursor position"><div class="rail"></div><div class="orb" id="orb"></div></div>
+      <button class="cmd" id="cmd-right" aria-label="Right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Move right<small id="hint-right"></small></button>
+    </div>
+
+    <div class="sig"><canvas id="wave" role="img" aria-label="Signal sweep for channels C3, Cz and C4"></canvas></div>
+    <div class="chips" id="chips"></div>
+
+    <div class="readout">
+      <div><label>Predicted intention</label><strong id="pred">Waiting</strong><div class="small" id="status" aria-live="polite"></div></div>
+      <div><label>Confidence</label><strong class="num" id="conf">Not read yet</strong><div class="meter"><div class="fill" id="fill"></div><div class="limit" id="limit"></div></div></div>
+      <div><label>Command</label><strong id="command">None</strong><div class="small" id="commandNote"></div></div>
+      <div class="truth"><label>True label</label><strong id="truth">Hidden</strong><div class="small" id="truthNote">Comes from the dataset and never drives the command</div></div>
+    </div>
+
+    <div class="versus" id="versus"></div>
+
+    <div class="deck">
+      <div class="transport">
+        <button class="btn go" id="play">Start</button>
+        <button class="btn" id="back">Back</button>
+        <button class="btn" id="next">Next</button>
+        <button class="btn" id="reset">Reset</button>
+      </div>
+      <div class="slider"><label for="threshold">Confidence threshold <b class="num" id="thVal"></b></label><input type="range" id="threshold" min="50" max="95" step="1" value="60"></div>
+      <div class="slider" id="clarityBox"><label for="clarity">Signal clarity <b class="num" id="clVal"></b></label><input type="range" id="clarity" min="0" max="100" step="1" value="60"></div>
+      <div class="live"><b class="num" id="liveScore">0%</b><span id="liveLabel">held-out balanced accuracy</span></div>
+    </div>
+  </div>
+</div></section>
+
+<div class="sheet">
+<section class="section" id="analysis"><div class="wrap">
+  <div class="head"><h2 id="analysisTitle">Trial 1 analysis</h2><p>Each chart follows the last trial that finished reading.</p></div>
+  <div class="grid2">
+    <div class="fig"><h3>Band power over each hemisphere</h3><div id="power"></div><p class="note">Imagining one hand usually lowers mu-band power over the opposite side of the head.</p></div>
+    <div class="fig"><h3>Class probability</h3><div class="prob" id="prob"></div><p class="note">The dotted line is your confidence threshold. Below it the classifier abstains and sends nothing.</p></div>
+    <div class="fig wide"><h3>Channel and time attribution</h3><canvas id="heat" role="img" aria-label="Attribution heatmap by channel and time"></canvas><p class="note" id="heatNote">Darker cells are where the model's score was most sensitive. This describes the model. It does not show what caused a brain signal.</p></div>
+  </div>
+</div></section>
+
+<section class="section" id="evaluation"><div class="wrap">
+  <div class="head"><h2>Evaluation</h2><div class="seg" id="segScheme"></div></div>
+  <div class="warn" id="evalWarn"></div>
+  <p class="small" id="evalMeta" style="margin-bottom:12px"></p>
+  <div class="tablewrap fig wide"><table id="compare"></table></div>
+  <div class="grid2" style="margin-top:30px">
+    <div class="fig"><h3 id="cmTitle">Confusion matrix</h3><div class="cm" id="cm"></div></div>
+    <div class="fig"><h3>Per class</h3><div class="tablewrap"><table id="perClass"></table></div>
+      <h3 style="margin-top:24px">Per participant</h3><div class="tablewrap"><table id="perSubject"></table></div></div>
+    <div class="fig wide"><h3>What the threshold trades away</h3><div id="selective"></div><p class="note" id="selNote"></p></div>
+  </div>
+</div></section>
+
+<section class="section" id="method"><div class="wrap">
+  <div class="head"><h2>How a trial becomes a command</h2></div>
+  <ol class="steps">
+    <li><b>Cue</b>A participant imagines moving one hand after a left or right cue.</li>
+    <li><b>Filter</b>The signal is kept at 7 to 30 Hz, where mu and beta rhythms sit.</li>
+    <li><b>Window</b>The classifier reads the 3 seconds from 0.5 s to 3.5 s after the cue.</li>
+    <li><b>Features</b>Spatial filters compress the channels into a few power values.</li>
+    <li><b>Classify</b>Logistic regression gives a probability for left and right.</li>
+    <li><b>Decide</b>Confident predictions send a command. Others hold.</li>
+  </ol>
+</div></section>
+
+<section class="section" id="real-data"><div class="wrap">
+  <div class="head"><h2>Load real results</h2><p>The browser can't train on the full EEG dataset. Run the Python project once, then drop its export here. It stays in this browser tab.</p></div>
+  <div class="grid2">
+    <div class="fig">
+      <div class="drop" id="drop"><p>Drop <b>replay.json</b> here</p><label class="btn" for="file" style="display:inline-block;cursor:pointer">Choose a file</label><input type="file" id="file" accept=".json,application/json" hidden></div>
+      <p class="status" id="importStatus" aria-live="polite"></p>
+      <button class="btn" id="backSim" hidden>Return to the simulation</button>
+    </div>
+    <div class="fig"><h3>Create the file</h3>
+<pre>python model.py --source kaggle
+python export_web.py --source kaggle</pre>
+      <p class="note">This writes website/replay.json. Every prediction in it comes from a model that did not train on that run. Attribution stays in the Python app.</p></div>
+  </div>
+</div></section>
+
+<section class="section" id="about"><div class="wrap">
+  <div class="head"><h2>About and limitations</h2></div>
+  <div class="grid2 prose">
+    <div>
+      <p>No headset is connected and nothing is read from you. No real device is controlled. This is a research and teaching demo, and it is not a medical device or a diagnostic tool.</p>
+      <p>The simulation builds in one known effect, so its scores test the software and say nothing about real EEG. Signal clarity changes the size of that effect. At zero, the models should fall to chance.</p>
+      <p>Each recorded run holds about 15 trials, so scores on a few people are noisy, and performance varies widely between people.</p>
+    </div>
+    <div class="cite">
+      <p>Dataset: Schalk G, et al. BCI2000: a general-purpose brain-computer interface system. <i>IEEE Trans Biomed Eng</i> 51(6), 2004. Distributed by PhysioNet: Goldberger AL, et al. <i>Circulation</i> 101(23), 2000.</p>
+      <p>Methods and software: Lawhern VJ, et al. EEGNet. <i>J Neural Eng</i> 15(5), 2018. Gramfort A, et al. MNE-Python. <i>Front Neurosci</i> 7, 2013.</p>
+    </div>
+  </div>
+</div></section>
+</div>
+</main>
+<footer><div class="wrap">NeuroType, Aaroh Shandilya, 2026. Keys: Space to start or pause, left and right arrows to call a trial.</div></footer>
+
+<script>
+/*ENGINE*/
+</script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const COBALT = '#1450E6', TEAL = '#0792A8', ELECTRIC = '#2E8BFF';
+const SPEEDS = { Slow: 3.6, Normal: 2.4, Fast: 1.2 };
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pct = v => Math.round(v * 100) + '%';
+const S = { source:'synthetic', clarity:.6, threshold:.6, speed:'Normal', subject:1, run:4, model:'csp', scheme:'within',
+  idx:0, furthest:0, phase:'done', progress:0, auto:false, paused:false, shown:0, guesses:{}, holdTimer:null };
+let D, E, saved = null; // dataset, evaluation, and the simulation while a file is loaded
+
+function build(){ D = NT.simulate(S.clarity); E = NT.evaluate(D); }
+const trialsNow = () => D.trials.map((t, i) => [t, i]).filter(([t]) => t.s === S.subject && t.r === S.run);
+const subjects = () => [...new Set(D.trials.map(t => t.s))];
+const runsFor = s => [...new Set(D.trials.filter(t => t.s === s).map(t => t.r))];
+
+function decision(i){ const list = trialsNow(); if (!list[i]) return null; const p = E.p[S.model].within[list[i][1]];
+  if (!Number.isFinite(p)) return null; const confidence = Math.max(p, 1 - p);
+  return { p, side: p >= .5 ? 'Right' : 'Left', confidence, accepted: confidence >= S.threshold, truth: list[i][0].y ? 'Right' : 'Left' }; }
+function cursorPath(){ const n = trialsNow().length, path = [0]; let pos = 0;
+  for (let i = 0; i < n; i++){ const d = decision(i); if (d && d.accepted) pos = Math.max(-5, Math.min(5, pos + (d.side === 'Right' ? 1 : -1))); path.push(pos); } return path; }
+const toPct = v => 50 + 44 * v / 5;
+
+function segment(id, items, value, onPick){ const el = $(id); el.textContent = '';
+  items.forEach(([key, label]) => { const b = document.createElement('button'); b.textContent = label; b.setAttribute('aria-pressed', String(key === value));
+    b.onclick = () => onPick(key); el.appendChild(b); }); }
+function renderControls(){
+  segment('segSubject', subjects().map(s => [s, String(s)]), S.subject, v => { S.subject = v; if (!runsFor(v).includes(S.run)) S.run = runsFor(v)[0]; restart(); });
+  segment('segRun', runsFor(S.subject).map(r => [r, String(r)]), S.run, v => { S.run = v; restart(); });
+  segment('segModel', D.models.map(m => [m, shortName(m)]), S.model, v => { S.model = v; renderAll(); });
+  segment('segSpeed', Object.keys(SPEEDS).map(k => [k, k]), S.speed, v => { S.speed = v; renderControls(); });
+  segment('segScheme', [['within','Held-out run'],['loso','Held-out participant']], S.scheme, v => { S.scheme = v; renderEval(); renderControls(); });
+}
+const shortName = m => ({ csp:'CSP', power:'C3/C4 power', eegnet:'EEGNet' }[m] || m);
+
+function drawWave(progress){
+  const c = $('wave'), ctx = c.getContext('2d'), list = trialsNow(); if (!list[S.idx]) return;
+  const dpr = devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight; c.width = W * dpr; c.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const lanes = list[S.idx][0].lanes, lane = H / lanes.length, left = 34;
+  let sd = 0, n = 0; lanes.forEach(a => a.forEach(v => { sd += v * v; n++; })); sd = Math.sqrt(sd / n) || 1;
+  ctx.font = '600 12px "Instrument Sans", sans-serif'; ctx.textBaseline = 'middle';
+  lanes.forEach((s, k) => { const y0 = lane * (k + .5);
+    ctx.fillStyle = '#4A5F85'; ctx.fillText(D.laneNames[k], 0, y0);
+    ctx.strokeStyle = '#E2EDFB'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(left, y0); ctx.lineTo(W, y0); ctx.stroke();
+    const end = Math.floor(progress * (s.length - 1)), step = Math.max(1, Math.floor(s.length / (W * 1.5)));
+    ctx.strokeStyle = COBALT; ctx.lineWidth = 1.3; ctx.lineJoin = 'round'; ctx.beginPath();
+    for (let i = 0; i <= end; i += step){ const x = left + (W - left) * i / (s.length - 1), y = y0 - Math.max(-1, Math.min(1, s[i] / (3 * sd))) * lane * .46; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke(); });
+  if (progress > 0 && progress < 1){ const x = left + (W - left) * progress, g = ctx.createLinearGradient(x - 28, 0, x, 0);
+    g.addColorStop(0, 'rgba(46,139,255,0)'); g.addColorStop(1, 'rgba(46,139,255,.35)'); ctx.fillStyle = g; ctx.fillRect(x - 28, 0, 28, H); ctx.fillStyle = ELECTRIC; ctx.fillRect(x - 1, 0, 2, H); }
+}
+
+function renderChips(){ const el = $('chips'), list = trialsNow(); el.textContent = '';
+  list.forEach(([t], i) => { const b = document.createElement('button'); b.className = 'chip'; const read = i <= S.furthest && (i < S.idx || S.phase === 'done' || i < S.furthest);
+    b.disabled = !read; b.textContent = i + 1; b.setAttribute('aria-label', `Trial ${i + 1}`);
+    if (read){ const d = decision(i); if (d){ b.textContent = d.accepted ? (d.side === 'Left' ? '◀' : '▶') : '·'; b.classList.add(!d.accepted ? 'hold' : d.side === d.truth ? 'ok' : 'miss'); } }
+    if (i === S.idx) b.classList.add('now'); b.onclick = () => jump(i); el.appendChild(b); });
+  const l = document.createElement('span'); l.className = 'legend'; l.textContent = 'Blue matches the true label, red misses, dot holds'; el.appendChild(l); }
+
+function renderTrial(){
+  const n = trialsNow().length, d = decision(S.idx), path = cursorPath(), done = S.phase === 'done', reading = S.phase === 'reading';
+  $('panel').classList.toggle('reading', reading && !S.paused);
+  $('orb').style.left = toPct(path[done ? S.idx + 1 : S.idx]) + '%';
+  ['left','right'].forEach(k => { const el = $('cmd-' + k), name = k === 'left' ? 'Left' : 'Right', g = S.guesses[gKey()];
+    el.className = 'cmd'; el.classList.toggle('open', reading); el.classList.toggle('guess', g === name && !done);
+    $('hint-' + k).textContent = reading ? (g === name ? 'Your call' : (g ? '' : 'Call it')) : '';
+    if (done && d && d.side === name) el.classList.add(d.accepted ? 'on' : 'lean'); });
+  $('limit').style.left = (S.threshold - .5) * 200 + '%';
+  $('thVal').textContent = pct(S.threshold); $('clVal').textContent = pct(S.clarity);
+  const reveal = done && d;
+  $('pred').textContent = reveal ? d.side : reading ? (S.paused ? 'Paused' : 'Reading') : 'Waiting';
+  $('status').textContent = reading ? `Trial ${S.idx + 1} of ${n}` : reveal ? `Trial ${S.idx + 1} of ${n}, ${d.accepted ? 'command accepted' : 'abstained'}` : `Trial ${S.idx + 1} of ${n}, ready`;
+  $('conf').textContent = reveal ? pct(d.confidence) : 'Not read yet';
+  $('fill').style.width = reveal ? (d.confidence - .5) * 200 + '%' : '0'; $('fill').classList.toggle('low', !!reveal && !d.accepted);
+  $('truth').textContent = reveal ? d.truth : 'Hidden';
+  const cmd = $('command'); cmd.classList.toggle('held', !!reveal && !d.accepted);
+  cmd.textContent = reveal ? (d.accepted ? 'Move ' + d.side.toLowerCase() : 'Hold') : 'None';
+  $('commandNote').textContent = reveal ? `${pct(d.confidence)} ${d.accepted ? 'meets' : 'is below'} the ${pct(S.threshold)} threshold` : '';
+  $('truthNote').textContent = !reveal ? 'Comes from the dataset and never drives the command' : !d.accepted ? 'No command was sent for this trial' : d.side === d.truth ? '✓ Prediction matches' : '✕ Prediction does not match';
+  $('play').textContent = S.auto ? 'Pause' : (S.paused ? 'Resume' : 'Start');
+  $('back').disabled = S.idx === 0; $('next').disabled = S.idx >= n - 1;
+  renderChips(); renderVersus();
+}
+
+const gKey = () => `${S.subject}_${S.run}_${S.idx}`;
+function renderVersus(){ let you = 0, model = 0, n = 0; const list = trialsNow();
+  list.forEach(([t], i) => { const g = S.guesses[`${S.subject}_${S.run}_${i}`]; if (!g || (i === S.idx && S.phase !== 'done')) return; const d = decision(i); if (!d) return; n++; if (g === d.truth) you++; if (d.side === d.truth) model++; });
+  const acc = list.map((_, i) => i).filter(i => i <= S.furthest && (i < S.idx || S.phase === 'done')).map(decision).filter(Boolean), ok = acc.filter(d => d.accepted);
+  $('versus').innerHTML = '';
+  const a = document.createElement('span'); a.innerHTML = `This run: <b class="num">${ok.length}</b> accepted, <b class="num">${acc.length - ok.length}</b> held, <b class="num">${ok.filter(d => d.side === d.truth).length}</b> of ${ok.length} commands match the true label`;
+  const b = document.createElement('span'); b.innerHTML = n ? `Your calls: you <b class="num">${you}/${n}</b>, model <b class="num">${model}/${n}</b>` : (S.phase === 'reading' ? 'Call this trial: click a card or use the arrow keys' : 'Press Start, then call a trial before the model does');
+  $('versus').append(a, b); }
+
+function renderAnalysis(){
+  const list = trialsNow(), i = S.shown; const entry = i === null ? null : list[i];
+  $('analysisTitle').textContent = entry ? `Trial ${i + 1} analysis` : 'Analysis';
+  const empty = 'Appears once a trial has been read.';
+  if (!entry){ $('power').textContent = empty; $('prob').textContent = empty; $('heat').hidden = true; return; }
+  $('heat').hidden = false;
+  const t = entry[0], d = decision(i);
+  drawPower(t);
+  const box = $('prob'); box.textContent = '';
+  if (d) [['Left', 1 - d.p, COBALT], ['Right', d.p, TEAL]].forEach(([name, v, col]) => {
+    const row = document.createElement('div'); row.className = 'prow';
+    row.innerHTML = `<span class="num">${name} ${pct(v)}</span><div class="pbar"><div class="pfill" style="width:${v * 100}%;background:${col}"></div><div class="plimit" style="left:${S.threshold * 100}%"></div></div>`; box.appendChild(row); });
+  drawHeat(t);
+}
+
+function drawPower(t){
+  const ids = ['C3','C4'].map(n => D.laneNames.indexOf(n)); if (ids.includes(-1)) { $('power').textContent = 'C3 and C4 are not in this file.'; return; }
+  const win = Math.round(.3 * D.lanesFs), series = ids.map(id => { const s = t.lanes[id], out = [];
+    for (let i = 0; i + win <= s.length; i += Math.ceil(win / 3)){ let v = 0; for (let j = i; j < i + win; j++) v += s[j] * s[j]; out.push(Math.sqrt(v / win)); } return out; });
+  const W = 520, H = 210, m = { l:12, r:44, t:12, b:32 }, max = Math.max(...series.flat()) * 1.08, n = series[0].length, X = i => m.l + (W - m.l - m.r) * i / (n - 1), Y = v => H - m.b - (H - m.t - m.b) * v / max;
+  const dur = t.lanes[0].length / D.lanesFs, cols = [COBALT, TEAL], names = ['C3, left side','C4, right side'], dash = ['', '6 4'];
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Band power for C3 and C4 across the trial"><line x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}" stroke="#CFE1FA"/>`;
+  for (let s = 1; s <= 3; s++){ const x = m.l + (W - m.l - m.r) * (s - .5 + 0) / dur; if (x <= W - m.r + 1) svg += `<text x="${x}" y="${H - 12}" text-anchor="middle">${s} s</text>`; }
+  series.forEach((a, k) => { svg += `<path d="${a.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join('')}" fill="none" stroke="${cols[k]}" stroke-width="2.2" stroke-linejoin="round" stroke-dasharray="${dash[k]}"/>`; });
+  const ends = series.map(a => Y(a[a.length - 1])); if (Math.abs(ends[0] - ends[1]) < 16){ const up = ends[0] < ends[1] ? 0 : 1; ends[up] -= 8; ends[1 - up] += 8; }
+  series.forEach((a, k) => { svg += `<text class="ink" x="${W - m.r + 5}" y="${ends[k] + 4}">${k ? 'C4' : 'C3'}</text>`; });
+  $('power').innerHTML = svg + '</svg>';
+  $('power').querySelector('svg').setAttribute('aria-description', names.join(', '));
+}
+
+function drawHeat(t){
+  const c = $('heat'), ctx = c.getContext('2d'), model = E.fitted[`${S.model}_${t.s}_${t.r}`];
+  const dpr = devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight; c.width = W * dpr; c.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  if (!model){ c.style.height = '0px'; $('heatNote').textContent = 'Attribution needs the trained model files, so it stays in the Python app for loaded results.'; return; }
+  c.style.height = ''; $('heatNote').textContent = "Darker cells are where the model's score was most sensitive. This describes the model. It does not show what caused a brain signal.";
+  const A = NT.attribution(model, t), left = 42, bottom = 24, rows = A.length, cols = A[0].length, cw = (W - left) / cols, ch = (H - bottom) / rows;
+  const lerp = (a, b, f) => Math.round(a + (b - a) * f);
+  A.forEach((row, r) => row.forEach((v, k) => { const f = Math.sqrt(v), s = f < .5 ? [[238,246,255],[125,182,255],f * 2] : [[125,182,255],[13,47,158],(f - .5) * 2];
+    ctx.fillStyle = `rgb(${lerp(s[0][0],s[1][0],s[2])},${lerp(s[0][1],s[1][1],s[2])},${lerp(s[0][2],s[1][2],s[2])})`; ctx.fillRect(left + k * cw, r * ch, cw - 1, ch - 1); }));
+  ctx.fillStyle = '#4A5F85'; ctx.font = '12px "Instrument Sans", sans-serif'; ctx.textBaseline = 'middle';
+  D.channels.forEach((n, r) => ctx.fillText(n, 0, (r + .5) * ch));
+  [.5,1.5,2.5,3.5].forEach((s, i) => { ctx.textAlign = i === 3 ? 'right' : i === 0 ? 'left' : 'center'; ctx.fillText(s + ' s', left + (s - .5) / 3 * (W - left), H - 10); }); ctx.textAlign = 'left';
+}
+
+function scored(m, scheme){ const p = E.p[m][scheme], y = [], q = [], s = []; D.trials.forEach((t, i) => { if (Number.isFinite(p[i])){ y.push(t.y); q.push(p[i]); s.push(t.s); } }); return { y, q, s }; }
+
+function renderEval(){
+  const real = D.source !== 'synthetic', nP = subjects().length;
+  $('evalWarn').textContent = real ? `Loaded from your ${D.source} export. ${nP < 10 ? `With ${nP} participants, treat held-out-participant scores as a rough indication only.` : ''}`
+    : 'These scores are computed in your browser from simulated signals. They test the software and say nothing about real EEG.';
+  $('evalMeta').textContent = `${D.trials.length} trials, ${nP} participants. Chance is 50%. Whole runs or whole participants are held out.`;
+  const has = D.models.filter(m => scored(m, S.scheme).y.length);
+  const tbl = $('compare'); tbl.innerHTML = '<thead><tr><th>Model</th><th>Balanced accuracy</th><th>Macro F1</th><th>Accuracy 95% interval</th><th>Calibration error</th><th class="trainc">Training score, not held out</th></tr></thead>';
+  const body = document.createElement('tbody');
+  has.forEach(m => { const { y, q } = scored(m, S.scheme), r = NT.summary(y, q), tr = E.trainScore[m] && E.trainScore[m][S.scheme], row = document.createElement('tr'); if (m === S.model) row.className = 'sel';
+    row.innerHTML = `<td></td><td>${r.balanced.toFixed(3)}</td><td>${r.macroF1.toFixed(3)}</td><td>${pct(r.ci[0])} to ${pct(r.ci[1])}</td><td>${r.ece.toFixed(3)}</td><td class="trainc">${tr == null ? 'Not in file' : tr.toFixed(3)}</td>`;
+    row.firstChild.textContent = NT.MODEL_NAMES[m] || m; body.appendChild(row); });
+  tbl.appendChild(body);
+  const rows = scored(S.model, S.scheme);
+  if (!rows.y.length){ $('cm').textContent = 'Not evaluated yet.'; $('selective').textContent = ''; $('perClass').textContent = ''; $('perSubject').textContent = ''; return; }
+  const r = NT.summary(rows.y, rows.q);
+  $('cmTitle').textContent = `Confusion matrix, ${shortName(S.model)}`;
+  const max = Math.max(...r.cm.flat()) || 1, cell = v => { const f = v / max, dark = f > .55; return `<div class="cell num" style="background:color-mix(in srgb, ${COBALT} ${Math.round(f * 100)}%, #EEF6FF);color:${dark ? '#fff' : '#0A1B3F'}">${v}</div>`; };
+  $('cm').innerHTML = `<div></div><div>Predicted left</div><div>Predicted right</div><div class="y">True left</div>${cell(r.cm[0][0])}${cell(r.cm[0][1])}<div class="y">True right</div>${cell(r.cm[1][0])}${cell(r.cm[1][1])}`;
+  $('perClass').innerHTML = '<thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Trials</th></tr></thead><tbody>' + ['Left','Right'].map((n, k) => { const c = r.perClass[k]; return `<tr><td>${n}</td><td>${c.precision.toFixed(3)}</td><td>${c.recall.toFixed(3)}</td><td>${c.f1.toFixed(3)}</td><td>${c.support}</td></tr>`; }).join('') + '</tbody>';
+  $('perSubject').innerHTML = '<thead><tr><th>Participant</th><th>Balanced accuracy</th></tr></thead><tbody>' + [...new Set(rows.s)].map(s => { const y = [], q = []; rows.s.forEach((v, i) => { if (v === s){ y.push(rows.y[i]); q.push(rows.q[i]); } }); return `<tr><td>P${s}</td><td>${NT.summary(y, q).balanced.toFixed(3)}</td></tr>`; }).join('') + '</tbody>';
+  drawSelective(r);
+  tween($('liveScore'), NT.summary(...(k => [k.y, k.q])(scored(S.model, 'within'))).balanced);
+}
+
+function drawSelective(r){
+  const W = $('selective').clientWidth < 620 ? 560 : 1000, H = 250, m = { l:44, r:18, t:14, b:38 }, pts = r.selective, X = t => m.l + (W - m.l - m.r) * (t - .5) / .45, Y = v => H - m.b - (H - m.t - m.b) * v;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Accuracy and share of trials accepted at each threshold" id="selSvg" style="cursor:pointer">`;
+  [0,.5,1].forEach(v => s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#E2EDFB"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end">${pct(v)}</text>`);
+  pts.forEach((p, i) => { if (W > 600 || i % 2 === 0) s += `<text x="${X(p.threshold)}" y="${H - 16}" text-anchor="middle">${pct(p.threshold)}</text>`; });
+  s += `<text x="${(W + m.l) / 2}" y="${H - 1}" text-anchor="middle">Confidence threshold</text>`;
+  const line = (key, col, dash) => { const a = pts.filter(p => p[key] !== null); return `<path d="${a.map((p, i) => (i ? 'L' : 'M') + X(p.threshold).toFixed(1) + ' ' + Y(p[key]).toFixed(1)).join('')}" fill="none" stroke="${col}" stroke-width="2.4" stroke-dasharray="${dash}"/>` + a.map(p => `<circle cx="${X(p.threshold)}" cy="${Y(p[key])}" r="4.5" fill="${col}" stroke="#fff" stroke-width="2"><title>${pct(p.threshold)}: ${pct(p[key])}</title></circle>`).join(''); };
+  s += line('accuracy', COBALT, '') + line('coverage', TEAL, '7 5');
+  const end = pts.filter(p => p.accuracy !== null).pop();
+  s += `<text class="ink" x="${Math.min(X(end.threshold), W - 200)}" y="${Y(end.accuracy) + (end.accuracy > .9 ? 20 : -10)}" text-anchor="start">Accuracy of accepted commands</text>`;
+  s += `<text class="ink" x="${X(.72)}" y="${Y(pts[Math.round((.72 - .5) / .05)].coverage) - 14}">Share of trials accepted</text>`;
+  s += `<line x1="${X(S.threshold)}" x2="${X(S.threshold)}" y1="${m.t}" y2="${H - m.b}" stroke="#0A1B3F" stroke-width="2" stroke-dasharray="3 4"/></svg>`;
+  $('selective').innerHTML = s;
+  const near = pts.reduce((a, b) => Math.abs(b.threshold - S.threshold) < Math.abs(a.threshold - S.threshold) ? b : a);
+  $('selNote').textContent = near.accuracy === null ? `No trials reach ${pct(near.threshold)} confidence.` : `Near ${pct(near.threshold)}: ${pct(near.coverage)} of trials send a command, and ${pct(near.accuracy)} of those are correct. Click the chart to move the threshold.`;
+  $('selSvg').onclick = e => { const b = e.currentTarget.getBoundingClientRect(), t = .5 + .45 * ((e.clientX - b.left) * W / b.width - m.l) / (W - m.l - m.r); setThreshold(Math.max(.5, Math.min(.95, t))); };
+}
+
+let tweenId = 0;
+function tween(el, to){ const id = ++tweenId, from = parseFloat(el.dataset.v || 0), t0 = performance.now(); el.dataset.v = to;
+  if (still){ el.textContent = pct(to); return; }
+  (function f(now){ if (id !== tweenId) return; const k = Math.min(1, (now - t0) / 350); el.textContent = pct(from + (to - from) * k * (2 - k)); if (k < 1) requestAnimationFrame(f); })(t0); }
+
+function setThreshold(t){ S.threshold = Math.round(t * 100) / 100; $('threshold').value = Math.round(S.threshold * 100); renderTrial(); renderAnalysis(); renderEval(); }
+function renderAll(){ renderControls(); renderTrial(); if (S.phase === 'done') S.shown = S.idx; renderAnalysis(); renderEval(); drawWave(S.phase === 'reading' ? S.progress : S.phase === 'done' ? 1 : 0); }
+
+let raf = null, last = 0;
+function clearHold(){ clearTimeout(S.holdTimer); S.holdTimer = null; }
+function read(){ clearHold(); if (still){ finish(); return; } S.phase = 'reading'; S.progress = 0; S.paused = false; last = performance.now(); renderTrial(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+function loop(now){ if (S.phase !== 'reading' || S.paused) return; S.progress = Math.min(1, S.progress + (now - last) / 1000 / SPEEDS[S.speed]); last = now; drawWave(S.progress);
+  if (S.progress >= 1) finish(); else raf = requestAnimationFrame(loop); }
+function finish(){ S.phase = 'done'; S.furthest = Math.max(S.furthest, S.idx); S.shown = S.idx; drawWave(1); renderTrial(); renderAnalysis();
+  const d = decision(S.idx); if (d && d.accepted && !still){ const ring = document.createElement('div'); ring.className = 'ring'; $('orb').appendChild(ring); setTimeout(() => ring.remove(), 850); }
+  if (S.auto){ if (S.idx + 1 < trialsNow().length) S.holdTimer = setTimeout(() => { S.idx++; S.furthest = Math.max(S.furthest, S.idx - 1); read(); }, 1000); else { S.auto = false; renderTrial(); } } }
+function jump(i){ clearHold(); cancelAnimationFrame(raf); S.auto = false; S.paused = false; S.idx = i; S.phase = 'done'; S.shown = i; S.furthest = Math.max(S.furthest, i); renderTrial(); renderAnalysis(); drawWave(1); }
+function restart(){ clearHold(); cancelAnimationFrame(raf); Object.assign(S, { idx:0, furthest:0, phase:'idle', auto:false, paused:false, progress:0, shown:null }); renderControls(); renderTrial(); renderAnalysis(); renderEval(); drawWave(0); }
+function togglePlay(){ if (S.auto){ S.auto = false; clearHold(); if (S.phase === 'reading'){ S.paused = true; } renderTrial(); return; }
+  S.auto = true; if (S.paused){ S.paused = false; last = performance.now(); renderTrial(); raf = requestAnimationFrame(loop); return; }
+  if (S.phase === 'done' && S.idx + 1 >= trialsNow().length) S.idx = 0; else if (S.phase === 'done') S.idx++; read(); }
+function guess(name){ if (S.phase === 'reading' && !S.guesses[gKey()]){ S.guesses[gKey()] = name; renderTrial(); } }
+
+$('play').onclick = togglePlay;
+$('next').onclick = () => { S.auto = false; if (S.idx + 1 < trialsNow().length){ S.idx++; read(); } };
+$('back').onclick = () => jump(S.idx - 1);
+$('reset').onclick = () => { S.guesses = {}; restart(); };
+$('cmd-left').onclick = () => guess('Left'); $('cmd-right').onclick = () => guess('Right');
+$('threshold').oninput = e => setThreshold(+e.target.value / 100);
+let clarityTimer;
+$('clarity').oninput = e => { S.clarity = +e.target.value / 100; $('clVal').textContent = pct(S.clarity); clearTimeout(clarityTimer);
+  clarityTimer = setTimeout(() => { build(); renderTrial(); renderAnalysis(); renderEval(); drawWave(S.phase === 'done' ? 1 : S.progress); }, 90); };
+addEventListener('keydown', e => { if (e.target.closest('input,button,a,label')) { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' || e.target.tagName === 'INPUT') return; }
+  if (e.code === 'Space'){ e.preventDefault(); togglePlay(); } else if (e.key === 'ArrowLeft') guess('Left'); else if (e.key === 'ArrowRight') guess('Right'); });
+addEventListener('resize', () => { drawWave(S.phase === 'done' ? 1 : S.progress); if (S.shown !== null) renderAnalysis(); });
+
+/* Loading an export from the Python project */
+function parseExport(j){
+  if (j.format !== 'neurotype-replay-1') throw new Error('This is not a NeuroType export. Create one with export_web.py.');
+  if (!Array.isArray(j.trials) || !j.trials.length || !Array.isArray(j.models) || !j.models.length || !Array.isArray(j.laneNames)) throw new Error('The file is missing trials, models or channel names.');
+  const ids = j.models.map(String), n = j.trials.length, p = {};
+  ids.forEach(m => p[m] = { within: new Float64Array(n).fill(NaN), loso: new Float64Array(n).fill(NaN) });
+  const trials = j.trials.map((t, i) => {
+    if (![0,1].includes(t.y) || !Array.isArray(t.w) || t.w.length !== j.laneNames.length) throw new Error(`Trial ${i + 1} has an unexpected shape.`);
+    ids.forEach(m => { for (const [scheme, key] of [['within','p'],['loso','l']]){ const v = t[key] && t[key][m]; if (v != null){ if (!(v >= 0 && v <= 1)) throw new Error(`Trial ${i + 1} has an invalid probability.`); p[m][scheme][i] = v; } } });
+    return { s:Number(t.s), r:Number(t.r), y:t.y, lanes:t.w.map(a => Float32Array.from(a)) }; });
+  return { data:{ source:String(j.source), channels:[], laneNames:j.laneNames.map(String), lanesFs:Number(j.lanesFs) || 80, trials, models:ids }, evaluation:{ p, trainScore:j.train || {}, fitted:{} } };
+}
+function useLoaded(res, name){
+  if (!saved) saved = { D, E, clarity:S.clarity }; D = res.data; E = res.evaluation;
+  S.subject = subjects()[0]; S.run = runsFor(S.subject)[0]; S.model = D.models[0]; S.guesses = {};
+  const real = ['kaggle','physionet'].includes(D.source), b = $('badge');
+  b.className = 'badge ' + (real ? 'real' : 'sim'); b.textContent = real ? 'RECORDED EEG — NOT LIVE' : 'SYNTHETIC SIGNAL — NOT EEG, NOT LIVE';
+  $('pLabel').textContent = real ? 'Participant' : 'Simulated participant'; $('clarityBox').hidden = true; $('backSim').hidden = false;
+  $('introText').textContent = real ? 'Recorded trials are replayed from your export. Every prediction comes from a model that did not train on that run. No headset is connected.' : 'Replaying your export of simulated trials.';
+  $('importStatus').className = 'status'; $('importStatus').textContent = `Loaded ${name}: ${D.trials.length} trials from ${subjects().length} participants.`;
+  restart(); location.hash = 'console';
+}
+function readFile(f){ if (!f) return; if (f.size > 120e6){ showErr('This file is over 120 MB. Export fewer participants.'); return; }
+  const fr = new FileReader(); fr.onload = () => { try { useLoaded(parseExport(JSON.parse(fr.result)), f.name); } catch (err) { showErr(err instanceof SyntaxError ? 'This file is not valid JSON.' : err.message); } };
+  fr.onerror = () => showErr('The file could not be read. Try choosing it again.'); fr.readAsText(f); }
+function showErr(m){ $('importStatus').className = 'status bad'; $('importStatus').textContent = m; }
+$('file').onchange = e => readFile(e.target.files[0]);
+['dragenter','dragover'].forEach(n => $('drop').addEventListener(n, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave','drop'].forEach(n => $('drop').addEventListener(n, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => readFile(e.dataTransfer.files[0]));
+$('backSim').onclick = () => { D = saved.D; E = saved.E; saved = null; S.subject = 1; S.run = 4; S.model = 'csp'; S.guesses = {};
+  const b = $('badge'); b.className = 'badge sim'; b.textContent = 'SYNTHETIC SIGNAL — NOT EEG, NOT LIVE'; $('pLabel').textContent = 'Simulated participant'; $('clarityBox').hidden = false; $('backSim').hidden = true; $('importStatus').textContent = '';
+  $('introText').textContent = 'Signals are simulated here and a classifier trains in your browser. It turns each trial into a left or right command, or holds when unsure. Press Start, then call left or right before the model does.'; restart(); };
+
+const track = $('track'); for (let i = -5; i <= 5; i++){ const t = document.createElement('div'); t.className = 'tick'; t.style.left = toPct(i) + '%'; track.appendChild(t); }
+build(); renderAll();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawWave(S.phase === 'done' ? 1 : S.progress); });
+})();
+</script>
